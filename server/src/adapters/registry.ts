@@ -209,6 +209,7 @@ const automatonLocalAdapter: ServerAdapterModule = {
   sessionCodec: automatonSessionCodec,
   sessionManagement: automatonSessionManagement ?? undefined,
   models: automatonModels,
+  supportsLocalAgentJwt: true,
   agentConfigurationDoc: automatonAgentConfigurationDoc,
 };
 

@@ -22,13 +22,27 @@ export interface AutomatonTaskOutput {
 function isValidAutomatonOutput(parsed: unknown): parsed is AutomatonTaskOutput {
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return false;
   const obj = parsed as Record<string, unknown>;
-  return (
-    typeof obj.success === "boolean" &&
-    typeof obj.exitReason === "string" &&
-    typeof obj.model === "string" &&
-    typeof obj.provider === "string" &&
-    Array.isArray(obj.turns)
-  );
+  if (
+    typeof obj.success !== "boolean" ||
+    typeof obj.exitReason !== "string" ||
+    typeof obj.model !== "string" ||
+    typeof obj.provider !== "string" ||
+    !Array.isArray(obj.turns)
+  ) {
+    return false;
+  }
+
+  // Ensure totalUsage has sensible defaults if null/missing
+  if (obj.totalUsage == null || typeof obj.totalUsage !== "object") {
+    obj.totalUsage = { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 };
+  } else {
+    const usage = obj.totalUsage as Record<string, unknown>;
+    if (typeof usage.inputTokens !== "number") usage.inputTokens = 0;
+    if (typeof usage.outputTokens !== "number") usage.outputTokens = 0;
+    if (typeof usage.cachedInputTokens !== "number") usage.cachedInputTokens = 0;
+  }
+
+  return true;
 }
 
 /**

@@ -44,10 +44,14 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const { runId, agent, runtime, config, context, onLog, onMeta, onSpawn, authToken } = ctx;
 
   // Extract config values
-  const automatonPath = asString(config.automatonPath, "automaton");
+  // config.command is the documented key (agentConfigurationDoc says "command");
+  // fall back to config.automatonPath for backward compat.
+  const automatonPath = asString(config.command, asString(config.automatonPath, "automaton"));
   const configuredCwd = asString(config.workdir, asString(config.cwd, ""));
   const model = asString(config.model, "").trim();
-  const maxTurns = asNumber(config.maxTurns, 25);
+  // config.maxTurnsPerRun is the documented key (agentConfigurationDoc says "maxTurnsPerRun");
+  // fall back to config.maxTurns for backward compat.
+  const maxTurns = asNumber(config.maxTurnsPerRun, asNumber(config.maxTurns, 25));
   const timeoutSec = asNumber(config.timeoutSec, 300);
   const billingType = asString(config.billingType, "subscription_included") as AdapterBillingType;
 
@@ -137,8 +141,12 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     companyId: agent.companyId,
     prompt,
     session: Object.keys(runtimeSessionParams).length > 0 ? runtimeSessionParams : null,
+    // maxTurns is passed via CLI --max-turns flag, not in the stdin JSON, to avoid duplication.
     ...(model ? { model } : {}),
-    ...(maxTurns > 0 ? { maxTurns } : {}),
+    // Send config in stdin JSON so Automaton can pick up inferenceModel and other overrides.
+    config: {
+      ...(model ? { inferenceModel: model } : {}),
+    },
   };
 
   const taskInputJson = JSON.stringify(taskInput);
@@ -221,8 +229,9 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     cachedInputTokens: parsed.totalUsage.cachedInputTokens,
   };
 
+  // Allow negative costs (credits/refunds) — only default to 0 for non-numeric values.
   const costUsd =
-    typeof parsed.totalCostCents === "number" && parsed.totalCostCents > 0
+    typeof parsed.totalCostCents === "number"
       ? parsed.totalCostCents / 100
       : 0;
 
