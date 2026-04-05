@@ -79,6 +79,18 @@ import {
   agentConfigurationDoc as hermesAgentConfigurationDoc,
   models as hermesModels,
 } from "hermes-paperclip-adapter";
+import {
+  execute as automatonExecute,
+  testEnvironment as automatonTestEnvironment,
+  listSkills as listAutomatonSkills,
+  syncSkills as syncAutomatonSkills,
+  sessionCodec as automatonSessionCodec,
+  sessionManagement as automatonSessionManagement,
+} from "@originhero/adapter-automaton-local/server";
+import {
+  agentConfigurationDoc as automatonAgentConfigurationDoc,
+  models as automatonModels,
+} from "@originhero/adapter-automaton-local";
 import { processAdapter } from "./process/index.js";
 import { httpAdapter } from "./http/index.js";
 
@@ -188,6 +200,18 @@ const hermesLocalAdapter: ServerAdapterModule = {
   detectModel: () => detectModelFromHermes(),
 };
 
+const automatonLocalAdapter: ServerAdapterModule = {
+  type: "automaton_local",
+  execute: automatonExecute,
+  testEnvironment: automatonTestEnvironment,
+  listSkills: listAutomatonSkills,
+  syncSkills: syncAutomatonSkills,
+  sessionCodec: automatonSessionCodec,
+  sessionManagement: automatonSessionManagement ?? undefined,
+  models: automatonModels,
+  agentConfigurationDoc: automatonAgentConfigurationDoc,
+};
+
 const adaptersByType = new Map<string, ServerAdapterModule>(
   [
     claudeLocalAdapter,
@@ -198,6 +222,7 @@ const adaptersByType = new Map<string, ServerAdapterModule>(
     geminiLocalAdapter,
     openclawGatewayAdapter,
     hermesLocalAdapter,
+    automatonLocalAdapter,
     processAdapter,
     httpAdapter,
   ].map((a) => [a.type, a]),
